@@ -89,6 +89,30 @@ class CloudonixConfigurationResponse(BaseModel):
     from_numbers: List[str]
 
 
+class LcrConfigurationRequest(BaseModel):
+    """Request schema for LCR configuration."""
+
+    provider: str = Field(default="lcr")
+    host: str = Field(..., description="LCR Host/IP")
+    port: int = Field(5060, description="LCR Port")
+    auth_token: str = Field(..., description="Auth Token")
+    api_key: str = Field(..., description="API Key")
+    from_numbers: List[str] = Field(
+        default_factory=list, description="List of LCR phone numbers"
+    )
+
+
+class LcrConfigurationResponse(BaseModel):
+    """Response schema for LCR configuration with masked sensitive fields."""
+
+    provider: str
+    host: str
+    port: int
+    auth_token: str  # Masked
+    api_key: str  # Masked
+    from_numbers: List[str]
+
+
 class TelephonyConfigurationResponse(BaseModel):
     """Top-level telephony configuration response."""
 
@@ -96,3 +120,4 @@ class TelephonyConfigurationResponse(BaseModel):
     vonage: Optional[VonageConfigurationResponse] = None
     vobiz: Optional[VobizConfigurationResponse] = None
     cloudonix: Optional[CloudonixConfigurationResponse] = None
+    lcr: Optional[LcrConfigurationResponse] = None

@@ -60,7 +60,7 @@ export const PhoneCallDialog = ({
                     headers: { 'Authorization': `Bearer ${accessToken}` },
                 });
 
-                if (configResponse.error || (!configResponse.data?.twilio && !configResponse.data?.vonage && !configResponse.data?.vobiz && !configResponse.data?.cloudonix)) {
+                if (configResponse.error || (!configResponse.data?.twilio && !configResponse.data?.vonage && !configResponse.data?.vobiz && !configResponse.data?.cloudonix && !configResponse.data?.lcr)) {
                     setNeedsConfiguration(true);
                 } else {
                     setNeedsConfiguration(false);

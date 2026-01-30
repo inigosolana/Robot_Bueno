@@ -13,7 +13,9 @@ import type {
   TelephonyConfigurationResponse,
   TwilioConfigurationRequest,
   VobizConfigurationRequest,
-  VonageConfigurationRequest
+  VonageConfigurationRequest,
+  LcrConfigurationRequest,
+  LcrConfigurationResponse
 } from "@/client/types.gen";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +53,11 @@ interface TelephonyConfigForm {
   // Cloudonix fields
   bearer_token?: string;
   domain_id?: string;
+  // LCR fields
+  host?: string;
+  port?: number;
+  // lcr_auth_token?: string; // Using generic auth_token field
+  lcr_api_key?: string; // Distinct from Vonage api_key
   // Common field - multiple phone numbers
   from_numbers: string[];
 }
@@ -140,6 +147,16 @@ export default function ConfigureTelephonyPage() {
             setValue("bearer_token", cloudonixConfig.bearer_token);
             setValue("domain_id", cloudonixConfig.domain_id);
             setValue("from_numbers", cloudonixConfig.from_numbers?.length > 0 ? cloudonixConfig.from_numbers : [""]);
+          } else if ((response.data as TelephonyConfigurationResponse)?.lcr) {
+            const lcrConfig = (response.data as TelephonyConfigurationResponse).lcr as LcrConfigurationResponse;
+            setHasExistingConfig(true);
+            setValue("provider", "lcr");
+            setValue("host", lcrConfig.host);
+            setValue("port", lcrConfig.port);
+            // Reusing auth_token field for LCR auth_token
+            setValue("auth_token", lcrConfig.auth_token);
+            setValue("lcr_api_key", lcrConfig.api_key);
+            setValue("from_numbers", lcrConfig.from_numbers?.length > 0 ? lcrConfig.from_numbers : [""]);
           }
         }
       } catch (error) {
@@ -161,7 +178,8 @@ export default function ConfigureTelephonyPage() {
         | TwilioConfigurationRequest
         | VonageConfigurationRequest
         | VobizConfigurationRequest
-        | CloudonixConfigurationRequest;
+        | CloudonixConfigurationRequest
+        | LcrConfigurationRequest;
 
       const filteredNumbers = data.from_numbers.filter(n => n.trim() !== "");
 
@@ -220,6 +238,15 @@ export default function ConfigureTelephonyPage() {
           auth_id: data.auth_id,
           auth_token: data.vobiz_auth_token,
         } as VobizConfigurationRequest;
+      } else if (data.provider === "lcr") {
+        requestBody = {
+          provider: data.provider,
+          from_numbers: filteredNumbers,
+          host: data.host,
+          port: Number(data.port) || 5060,
+          auth_token: data.auth_token,
+          api_key: data.lcr_api_key,
+        } as LcrConfigurationRequest;
       } else {
         // Cloudonix
         requestBody = {
@@ -266,23 +293,25 @@ export default function ConfigureTelephonyPage() {
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
+          <div>
             <Card className="h-full">
               <CardHeader>
                 <CardTitle>
                   {selectedProvider === "twilio"
                     ? "Twilio"
                     : selectedProvider === "vonage"
-                    ? "Vonage"
-                    : selectedProvider === "vobiz"
-                    ? "Vobiz"
-                    : "Cloudonix"}{" "}
+                      ? "Vonage"
+                      : selectedProvider === "vobiz"
+                        ? "Vobiz"
+                        : selectedProvider === "lcr"
+                          ? "LCR"
+                          : "Cloudonix"}{" "}
                   Setup Guide
                 </CardTitle>
                 <CardDescription>
                   {selectedProvider === "cloudonix" ? (
                     <>
-                      Cloudonix is an AI Connectivity platform, enabling you to connect Dograh to any SIP product or SIP Telephony Provider.<br/><br/>
+                      Cloudonix is an AI Connectivity platform, enabling you to connect Dograh to any SIP product or SIP Telephony Provider.<br /><br />
                       <iframe
                         style={{ border: 0 }}
                         width="100%"
@@ -290,7 +319,7 @@ export default function ConfigureTelephonyPage() {
                         src="https://www.youtube.com/embed/qLKX0F99jpU?si=a_sF9ijSJdV4OdG-"
                         allowFullScreen
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      /><br/><br/>
+                      /><br /><br />
                       Visit{" "}
                       <a
                         href="https://cockpit.cloudonix.io/onboarding?affiliate=DOGRAH"
@@ -359,6 +388,30 @@ export default function ConfigureTelephonyPage() {
                       </p>
                     </div>
                   </div>
+                ) : selectedProvider === "lcr" ? (
+                  <div className="space-y-4 text-sm">
+                    <div>
+                      <h4 className="font-semibold mb-2">Getting Started with LCR:</h4>
+                      <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                        <li>Enter your LCR SIP Trunk details below</li>
+                        <li><strong>Host/IP:</strong> The SIP server address (e.g., trunksip.lcr.com)</li>
+                        <li><strong>Port:</strong> SIP port (usually 5060)</li>
+                        <li><strong>Auth Token & API Key:</strong> Your trunk credentials</li>
+                      </ol>
+                    </div>
+                  </div>
+                ) : selectedProvider === "lcr" ? (
+                  <div className="space-y-4 text-sm">
+                    <div>
+                      <h4 className="font-semibold mb-2">Getting Started with LCR:</h4>
+                      <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                        <li>Enter your LCR SIP Trunk details below</li>
+                        <li><strong>Host/IP:</strong> The SIP server address (e.g., trunksip.lcr.com)</li>
+                        <li><strong>Port:</strong> SIP port (usually 5060)</li>
+                        <li><strong>Auth Token & API Key:</strong> Your trunk credentials</li>
+                      </ol>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-4 text-sm">
                     <div>
@@ -407,6 +460,7 @@ export default function ConfigureTelephonyPage() {
                         <SelectItem value="vonage">Vonage</SelectItem>
                         <SelectItem value="vobiz">Vobiz</SelectItem>
                         <SelectItem value="cloudonix">Cloudonix</SelectItem>
+                        <SelectItem value="lcr">LCR</SelectItem>
                       </SelectContent>
                     </Select>
                     {hasExistingConfig && (
@@ -676,6 +730,105 @@ export default function ConfigureTelephonyPage() {
                             Enter valid phone numbers without + prefix (e.g., 14155551234)
                           </p>
                         )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* LCR-specific fields */}
+                  {selectedProvider === "lcr" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="host">Host / Address (IP)</Label>
+                        <Input
+                          id="host"
+                          placeholder="trunksip11.lcrcom.es"
+                          {...register("host", {
+                            required: selectedProvider === "lcr" ? "Host is required" : false,
+                          })}
+                        />
+                        {errors.host && (
+                          <p className="text-sm text-red-500">{errors.host.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="port">Port</Label>
+                        <Input
+                          id="port"
+                          type="number"
+                          placeholder="5060"
+                          defaultValue={5060}
+                          {...register("port")}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="lcr_api_key">Auth Username</Label>
+                        <Input
+                          id="lcr_api_key"
+                          type="text"
+                          autoComplete="off"
+                          placeholder={
+                            hasExistingConfig ? "Masked" : "Enter Auth Username (e.g. S20...)"
+                          }
+                          {...register("lcr_api_key", {
+                            required: selectedProvider === "lcr" && !hasExistingConfig ? "Username is required" : false,
+                          })}
+                        />
+                        {errors.lcr_api_key && (
+                          <p className="text-sm text-red-500">Username is required</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="auth_token">Auth Password</Label>
+                        <Input
+                          id="auth_token"
+                          type="password"
+                          autoComplete="off"
+                          placeholder={
+                            hasExistingConfig ? "Masked" : "Enter Auth Password"
+                          }
+                          {...register("auth_token", {
+                            required: selectedProvider === "lcr" && !hasExistingConfig ? "Password is required" : false,
+                          })}
+                        />
+                        {errors.auth_token && (
+                          <p className="text-sm text-red-500">Password is required</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>CLI Phone Numbers</Label>
+                        {fromNumbers.map((number, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              autoComplete="tel"
+                              placeholder="944771453"
+                              value={number}
+                              onChange={(e) => updatePhoneNumber(index, e.target.value)}
+                            />
+                            {fromNumbers.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => removePhoneNumber(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addPhoneNumber}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Phone Number
+                        </Button>
                       </div>
                     </>
                   )}

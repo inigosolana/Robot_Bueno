@@ -25,6 +25,7 @@ class WorkflowRunMode(Enum):
     STASIS = "stasis"
     WEBRTC = "webrtc"
     SMALLWEBRTC = "smallwebrtc"
+    LCR = "lcr"
 
     # Historical, not used anymore. Don't
     # use and don't remove

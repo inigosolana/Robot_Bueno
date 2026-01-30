@@ -796,6 +796,7 @@ export type TelephonyConfigurationResponse = {
     vonage?: VonageConfigurationResponse | null;
     vobiz?: VobizConfigurationResponse | null;
     cloudonix?: CloudonixConfigurationResponse | null;
+    lcr?: LcrConfigurationResponse | null;
 };
 
 export type TestSessionResponse = {

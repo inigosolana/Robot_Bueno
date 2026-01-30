@@ -12,6 +12,7 @@ from api.db import db_client
 from api.enums import OrganizationConfigurationKey
 from api.services.telephony.base import TelephonyProvider
 from api.services.telephony.providers.cloudonix_provider import CloudonixProvider
+from api.services.telephony.providers.lcr_provider import LCRProvider
 from api.services.telephony.providers.twilio_provider import TwilioProvider
 from api.services.telephony.providers.vobiz_provider import VobizProvider
 from api.services.telephony.providers.vonage_provider import VonageProvider
@@ -75,6 +76,15 @@ async def load_telephony_config(organization_id: int) -> Dict[str, Any]:
                 "domain_id": config.value.get("domain_id"),
                 "from_numbers": config.value.get("from_numbers", []),
             }
+        elif provider == "lcr":
+            return {
+                "provider": "lcr",
+                "host": config.value.get("host"),
+                "port": config.value.get("port"),
+                "auth_token": config.value.get("auth_token"),
+                "api_key": config.value.get("api_key"),
+                "from_numbers": config.value.get("from_numbers", []),
+            }
         else:
             raise ValueError(f"Unknown provider in config: {provider}")
 
@@ -115,6 +125,9 @@ async def get_telephony_provider(organization_id: int) -> TelephonyProvider:
     elif provider_type == "cloudonix":
         return CloudonixProvider(config)
 
+    elif provider_type == "lcr":
+        return LCRProvider(config)
+
     else:
         raise ValueError(f"Unknown telephony provider: {provider_type}")
 
@@ -127,4 +140,4 @@ async def get_all_telephony_providers() -> List[Type[TelephonyProvider]]:
     Returns:
         List of provider classes that can be used for webhook detection
     """
-    return [CloudonixProvider, TwilioProvider, VobizProvider, VonageProvider]
+    return [CloudonixProvider, TwilioProvider, VobizProvider, VonageProvider, LCRProvider]

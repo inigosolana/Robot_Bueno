@@ -10,6 +10,7 @@ export const WORKFLOW_RUN_MODES = {
     STASIS: 'stasis',
     WEBRTC: 'webrtc',
     SMALL_WEBRTC: 'smallwebrtc',
+    LCR: 'lcr',
 } as const;
 
 export type WorkflowRunMode = typeof WORKFLOW_RUN_MODES[keyof typeof WORKFLOW_RUN_MODES];
