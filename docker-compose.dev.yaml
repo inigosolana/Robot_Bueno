@@ -1,0 +1,21 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    image: dograh-api:local
+    ports:
+      - "8000:8000"
+      - "5060:5060/udp"
+      - "5060:5060/tcp"
+    environment:
+      # Ensure we use local settings
+      ENVIRONMENT: "local"
+    # Helper for hot reload if you want it (requires mounting volumes, which we have in main compose)
+    
+  # Simple UI override to use local build if needed, though usually standard image is fine.
+  # If you modified UI too, you might want to uncomment this:
+  # ui:
+  #   build:
+  #     context: ./ui
+  #     dockerfile: Dockerfile
